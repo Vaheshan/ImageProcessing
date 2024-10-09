@@ -148,3 +148,5 @@ for line in lines:
 
 json_output = json.dumps(output, indent=4)
 print(json_output)
+with open('output.json', 'w') as file:
+    json.dump(output, file, indent=4)
