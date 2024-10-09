@@ -1,0 +1,65 @@
+{
+    "name and address": "MARCO POLO ORTIGAS MANILA Quned by FRONTIER ORTIGAS HOTEL and RESORT CORP. Meralco \u20acve. & Sapphire Rd. Ortigas Ctr,, Pasig City 1400 Philippines",
+    "VAT_REG_TIN": "008-411-772-000",
+    "table": "Bi",
+    "date": "08 Feb,15",
+    "time": "12:49",
+    "staff": "ALEMIR",
+    "items": [
+        {
+            "item": "OASMINE",
+            "price": "178.97"
+        },
+        {
+            "item": "ST.CHX FEET xO",
+            "price": "166.71"
+        },
+        {
+            "item": "ST.PORK SIOMAT",
+            "price": "196.43"
+        },
+        {
+            "item": "ST.G RICE ABALONE",
+            "price": "196.43"
+        },
+        {
+            "item": "ST.SPINACH DUMPLING \u00a9",
+            "price": "196.43"
+        },
+        {
+            "item": "ST.SCALLOP DUMPLING",
+            "price": "428.58"
+        },
+        {
+            "item": "BAKED BBQ PORK BUN",
+            "price": "196.43"
+        },
+        {
+            "item": "PANFRIED ONION CAKE",
+            "price": "196.43"
+        },
+        {
+            "item": "FISH SCALLOP SP Px",
+            "price": "339.29"
+        },
+        {
+            "item": "MAR BEEF BARLIC",
+            "price": "517.86"
+        }
+    ],
+    "discount": [
+        {
+            "Type": "MPM DP 1S Bey",
+            "Amount": "26.79"
+        },
+        {
+            "Type": "MPM Dining Privilege",
+            "Amount": "809.44"
+        }
+    ],
+    "sub_total": "1770.93",
+    "vat": "212.51",
+    "service_charge": "260.72",
+    "tax": "49.59",
+    "total": "2293.75"
+}
