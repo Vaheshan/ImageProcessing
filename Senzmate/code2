@@ -1,0 +1,150 @@
+import cv2
+import numpy as np
+import re
+import json
+from fuzzywuzzy import fuzz
+
+image = cv2.imread('bill.jpg')
+blurred = cv2.GaussianBlur(image, (15, 15), 0)
+hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+
+lower_white = np.array([0, 0, 150], dtype=np.uint8)
+upper_white = np.array([180, 55, 255], dtype=np.uint8)
+mask = cv2.inRange(hsv, lower_white, upper_white)
+
+contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+largest_contour = max(contours, key=cv2.contourArea)
+
+
+epsilon = 0.02 * cv2.arcLength(largest_contour, True)
+approx = cv2.approxPolyDP(largest_contour, epsilon, True)
+
+
+x, y, w, h = cv2.boundingRect(approx)
+cropped_bill = image[y:y+h, x:x+w]
+
+cv2.imwrite('cropped_bill.jpg', cropped_bill)
+image = cv2.imread('cropped_bill.jpg')
+
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+_, threshold_img = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
+
+kernel = np.ones((2, 2), np.uint8)  
+dilated_img = cv2.dilate(threshold_img, kernel, iterations=1)
+cv2.imwrite('dilated_img.png', dilated_img)
+
+eroded_img = cv2.erode(dilated_img, kernel, iterations=1)
+
+closed_img = cv2.morphologyEx(eroded_img, cv2.MORPH_CLOSE, kernel)
+cv2.imwrite('closed_img.png', closed_img)
+
+cv2.imwrite('eroded_img.png', eroded_img)
+
+
+
+import pytesseract
+
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+text = pytesseract.image_to_string(closed_img)
+
+
+lines = text.splitlines()
+
+
+def fuzzy_match(line, keywords, threshold=85):
+    for keyword in keywords:
+        if fuzz.partial_ratio(keyword.lower(), line.lower()) >= threshold:
+            return True
+    return False
+
+def extract_amount(line):
+    match = re.search(r'([\d,]+[.,]\d{2})', line)  
+    if match:
+        amount = match.group(0)
+        if ',' in amount and '.' not in amount:
+            amount = amount.replace(",", ".")
+        return amount.replace(",", "")
+    return None
+
+output = {
+    "name and address": None,
+    "VAT_REG_TIN": None,
+    "table": None,
+    "date": None,
+    "time": None,
+    "staff": None,
+    "items": [],
+    "discount": [],
+    "sub_total": None,
+    "vat": None,
+    "service_charge": None,
+    "tax": None,
+    "total": None
+}
+
+info=True
+adding_items = True
+
+address_pattern = r'([A-Za-z\s.,&€]+(?:\s+\d+)?(?:\s+\w+)*,\s*\w+\s*\w+\s*\d{4}.[A-Za-z]+)'
+match = re.search(address_pattern, text)
+if match:
+    output["name and address"] = match.group(1).strip().replace('\n', ' ').strip()
+
+for line in lines:
+    line = line.strip()
+    if info:
+        
+        if fuzzy_match(line, ["VAT REG", "TIN"]):
+            output["VAT_REG_TIN"] = re.search(r"[\d-]+", line).group(0) if re.search(r"[\d-]+", line) else "N/A"
+        
+        if fuzzy_match(line, ["Table"]):
+            table_match = re.search(r"Table:\s*([\w\d]+)", line)
+            output["table"] = table_match.group(1) if table_match else "N/A"
+        
+        if fuzzy_match(line, ["Date"]):
+            date_match = re.search(r"(\d{2} [A-Za-z]+,?\d{2})", line)
+            output["date"] = date_match.group(1) if date_match else "N/A"
+        
+        if fuzzy_match(line, ["Time"]):
+            time_match = re.search(r"(\d{2}:\d{2})", line)
+            output["time"] = time_match.group(1) if time_match else "N/A"
+        
+        if fuzzy_match(line, ["Staff"]):
+            staff_match = re.search(r"(:\s)([A-Za-z]+)", line)
+            output["staff"] = staff_match.group(2) if staff_match else "N/A"
+    
+    if fuzzy_match(line, ["Sub-Tot"]):
+        output["sub_total"] = extract_amount(line)
+        adding_items = False  
+    
+    if  re.search(r"([-—][\d,]+[.,]\d+)", line) or fuzzy_match(line, ["discount", "privilege"]):
+        discount = re.search(r"([A-Za-z0-9\s]+)\s+([-—][\d,]+[.,]\d{2})", line)
+        output["discount"].append({"Type":discount.group(1).strip(),"Amount":extract_amount(line)})
+        adding_items = False 
+
+    if adding_items:
+        item_match = re.search(r"([A-Z].+?)\s+([\d,]+[.,]\d{2})", line)
+        if item_match:
+            item_name = item_match.group(1).strip()
+            output["items"].append({"item": item_name, "price": extract_amount(line)})
+            info=False
+    
+    if fuzzy_match(line, ["VAT"]):
+        output["vat"] = extract_amount(line)
+    
+    if fuzzy_match(line, ["S.C.", "service charge"]):
+        output["service_charge"] = extract_amount(line)
+    
+    
+    if fuzzy_match(line, ["tax"]):
+        output["tax"] = extract_amount(line)
+    
+    
+    if re.search(r"([\d,]+[.,]\d{2})", line):
+        output["total"] = extract_amount(line)
+
+
+json_output = json.dumps(output, indent=4)
+print(json_output)
