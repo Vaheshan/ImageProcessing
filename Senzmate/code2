@@ -42,7 +42,7 @@ cv2.imwrite('closed_img.png', closed_img)
 cv2.imwrite('eroded_img.png', eroded_img)
 
 
-
+###efddddddd
 import pytesseract
 
 #pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
