@@ -44,7 +44,7 @@ cv2.imwrite('eroded_img.png', eroded_img)
 
 ###efddddddd
 import pytesseract
-
+#bjbhbjb
 #pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 text = pytesseract.image_to_string(closed_img)
